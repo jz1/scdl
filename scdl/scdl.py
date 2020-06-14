@@ -539,7 +539,7 @@ def get_track_m3u8(track):
                 headers={
                 "Sec-Fetch-Mode":"cors",
                 "Origin": "https://soundcloud.com",
-                "Authorization": premiumtoken,
+                "Authorization": "OAuth {}".format(premiumtoken),
                 "Content-Type": "application/json",
                 "Accept": "application/json, text/javascript, */*; q=0.1",
                 "Referer": "https://soundcloud.com/",

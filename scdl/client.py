@@ -19,7 +19,7 @@ class Client():
                 headers={
                 "Sec-Fetch-Mode":"cors",
                 "Origin": "https://soundcloud.com",
-                "Authorization": premiumtoken,
+                "Authorization": "OAuth {}".format(token),
                 "Content-Type": "application/json",
                 "Accept": "application/json, text/javascript, */*; q=0.1",
                 "Referer": "https://soundcloud.com/",
