@@ -12,6 +12,7 @@ ALT2_CLIENT_ID = 'NONE'
 default_config = """[scdl]
 auth_token =
 path = .
+premium_auth_token =
 """
 
 if 'XDG_CONFIG_HOME' in os.environ:

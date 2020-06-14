@@ -67,6 +67,7 @@ import re
 import tempfile
 import codecs
 import shlex
+import json
 
 import configparser
 import mutagen
@@ -88,6 +89,7 @@ logger.addFilter(utils.ColorizeFilter())
 arguments = None
 token = ''
 path = ''
+premium_auth_token = ''
 offset = 1
 
 url = {
@@ -205,6 +207,7 @@ def get_config():
     Reads the music download filepath from scdl.cfg
     """
     global token
+    global premiumtoken
     config = configparser.ConfigParser()
 
     if 'XDG_CONFIG_HOME' in os.environ:
@@ -219,6 +222,7 @@ def get_config():
     try:
         token = config['scdl']['auth_token']
         path = config['scdl']['path']
+        premiumtoken = config['scdl']['premium_auth_token']
     except:
         logger.error('Are you sure scdl.cfg is in $HOME/.config/scdl/ ?')
         logger.error('Are both "auth_token" and "path" defined there?')
@@ -348,7 +352,7 @@ def download(user, dl_type, name):
     )
     dl_url = url[dl_type].format(user_id)
     logger.debug(dl_url)
-    resources = client.get_collection(dl_url, token)
+    resources = client.get_collection(dl_url, token, premiumtoken)
     del resources[:offset - 1]
     logger.debug(resources)
     total = len(resources)
@@ -507,7 +511,7 @@ def download_original_file(track, title):
         logger.info('Converting to .flac...')
         newfilename = filename[:-4] + ".flac"
 
-        commands = ['ffmpeg', '-i', filename, newfilename, '-loglevel', 'error']
+        commands = ['ffmpeg', '-i', filename, newfilename, '-y', '-loglevel', 'error']
         logger.debug("Commands: {}".format(commands))
         subprocess.call(commands)
         os.remove(filename)
@@ -518,13 +522,30 @@ def download_original_file(track, title):
 
 def get_track_m3u8(track):
     url = None
+    m4a = None
     for transcoding in track['media']['transcodings']:
+        if transcoding['format']['protocol'] == 'hls' \
+                and transcoding['format']['mime_type'] == 'audio/mp4; codecs="mp4a.40.2"':
+            m4a = transcoding['url']
         if transcoding['format']['protocol'] == 'hls' \
                 and transcoding['format']['mime_type'] == 'audio/mpeg':
             url = transcoding['url']
 
+    if m4a is not None:
+        url = m4a
+
     if url is not None:
-        r = requests.get(url, params={'client_id': CLIENT_ID})
+        r = requests.get(url,
+                headers={
+                "Sec-Fetch-Mode":"cors",
+                "Origin": "https://soundcloud.com",
+                "Authorization": premiumtoken,
+                "Content-Type": "application/json",
+                "Accept": "application/json, text/javascript, */*; q=0.1",
+                "Referer": "https://soundcloud.com/",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36",
+                "DNT": "1",
+                })
         logger.debug(r.url)
         return r.json()['url']
 
@@ -538,9 +559,17 @@ def download_hls_mp3(track, title):
 
     # Get the requests stream
     url = get_track_m3u8(track)
+    if (url.find('.m4a') != -1):
+        filename = filename[:-4] + ".m4a"
     filename_path = os.path.abspath(filename)
 
-    subprocess.call(['ffmpeg', '-i', url, '-c', 'copy', filename_path, '-loglevel', 'fatal'])
+    #output json
+    filejson = os.path.abspath('json\\' + filename + ".json")
+    with open(filejson, 'w', encoding='utf-8') as file:
+        file.write(json.dumps(track, indent=4))
+    logger.debug(filejson)
+
+    subprocess.call(['ffmpeg', '-i', url, '-c', 'copy', filename_path, '-y', '-loglevel', 'fatal'])
     return (filename, False)
 
 

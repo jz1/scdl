@@ -6,7 +6,7 @@ from scdl import CLIENT_ID
 
 class Client():
 
-    def get_collection(self, url, token):
+    def get_collection(self, url, token, premiumtoken):
         params = {
             'client_id': CLIENT_ID,
             'linked_partitioning': '1',
@@ -15,7 +15,17 @@ class Client():
             params['oauth_token'] = token
         resources = list()
         while url:
-            response = requests.get(url, params=params)
+            response = requests.get(url,
+                headers={
+                "Sec-Fetch-Mode":"cors",
+                "Origin": "https://soundcloud.com",
+                "Authorization": premiumtoken,
+                "Content-Type": "application/json",
+                "Accept": "application/json, text/javascript, */*; q=0.1",
+                "Referer": "https://soundcloud.com/",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36",
+                "DNT": "1",
+                })
             response.raise_for_status()
             json_data = response.json()
             if 'collection' in json_data:
