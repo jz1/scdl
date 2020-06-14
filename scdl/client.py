@@ -6,7 +6,7 @@ from scdl import CLIENT_ID
 
 class Client():
 
-    def get_collection(self, url, token, premiumtoken):
+    def get_collection(self, url, token):
         params = {
             'client_id': CLIENT_ID,
             'linked_partitioning': '1',

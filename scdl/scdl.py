@@ -352,7 +352,7 @@ def download(user, dl_type, name):
     )
     dl_url = url[dl_type].format(user_id)
     logger.debug(dl_url)
-    resources = client.get_collection(dl_url, token, premiumtoken)
+    resources = client.get_collection(dl_url, token)
     del resources[:offset - 1]
     logger.debug(resources)
     total = len(resources)
