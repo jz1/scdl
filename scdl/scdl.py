@@ -22,7 +22,7 @@ Options:
     me                          Use the user profile from the auth_token
     -l [url]                    URL can be track/playlist/user
     -n [maxtracks]              Download the n last tracks of a playlist according to the creation date
-    -s                          Download the stream of a user (token needed) (no reposts)
+    -s                          Download the stream of a user and creates user folders (token needed) (no reposts)
     -a                          Download all tracks of user (including reposts)
     -t                          Download all uploads of a user (no reposts)
     -f                          Download all favorites of a user
@@ -388,7 +388,12 @@ def download(user, dl_type, name):
                 item_name = item['type']
                 if item_name.find("repost") == -1:
                     uri = item[item_name]['uri']
+                    userdir = item[item_name]['user']['permalink']
+                    if not os.path.exists(userdir):
+                        os.makedirs(userdir)
+                        os.chdir(userdir)
                     parse_url(uri)
+                    os.chdir('..')
                 else:
                     logger.info('REPOST.')
             else:
