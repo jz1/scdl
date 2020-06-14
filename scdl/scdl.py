@@ -11,7 +11,7 @@ Usage:
     scdl me (-s | -a | -f | -t | -p | -m)[-c | --force-metadata][-n <maxtracks>]\
 [-o <offset>][--hidewarnings][--debug | --error][--path <path>][--addtofile][--addtimestamp]
 [--onlymp3][--hide-progress][--min-size <size>][--max-size <size>][--remove]
-[--no-playlist-folder][--download-archive <file>][--extract-artist][--flac][--no-album-tag]
+[--no-playlist-folder][--download-archive <file>][--extract-artist][--flac][--no-album-tag][--max-page <page>]
     scdl -h | --help
     scdl --version
 
@@ -22,7 +22,7 @@ Options:
     me                          Use the user profile from the auth_token
     -l [url]                    URL can be track/playlist/user
     -n [maxtracks]              Download the n last tracks of a playlist according to the creation date
-    -s                          Download the stream of a user (token needed)
+    -s                          Download the stream of a user (token needed) (no reposts)
     -a                          Download all tracks of user (including reposts)
     -t                          Download all uploads of a user (no reposts)
     -f                          Download all favorites of a user
@@ -52,6 +52,7 @@ Options:
     --remove                    Remove any files not downloaded from execution
     --flac                      Convert original files to .flac
     --no-album-tag              On some player track get the same cover art if from the same album, this prevent it
+    --max-page [page-amount]    Maximum number of pages it can try to load
 """
 
 import logging
@@ -89,7 +90,8 @@ logger.addFilter(utils.ColorizeFilter())
 arguments = None
 token = ''
 path = ''
-premium_auth_token = ''
+premiumtoken = ''
+maxpage = 99999
 offset = 1
 
 url = {
@@ -108,7 +110,8 @@ url = {
     'trackinfo': ('https://api-v2.soundcloud.com/tracks/{0}'),
     'original_download' : ("https://api-v2.soundcloud.com/tracks/{0}/download"),
     'user': ('https://api-v2.soundcloud.com/users/{0}'),
-    'me': ('https://api-v2.soundcloud.com/me?oauth_token={0}')
+    'me': ('https://api-v2.soundcloud.com/me?oauth_token={0}'),
+    'userstream': ('https://api-v2.soundcloud.com/stream')
 }
 client = client.Client()
 
@@ -122,6 +125,7 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     global offset
     global arguments
+    global maxpage
 
     # Parse argument
     arguments = docopt(__doc__, version=__version__)
@@ -171,6 +175,10 @@ def main():
             sys.exit(-1)
         logger.debug('max-size: %d', arguments['--max-size'])
 
+
+    if arguments['--max-page'] is not None:
+        maxpage = int(arguments['--max-page'])
+
     if arguments['--hidewarnings']:
         warnings.filterwarnings('ignore')
 
@@ -197,10 +205,11 @@ def main():
             download(who_am_i(), 'playlists', 'playlists')
         elif arguments['-m']:
             download(who_am_i(), 'playlists-liked', 'my and liked playlists')
+        elif arguments['-s']:
+            download(who_am_i(), 'userstream', 'stream of a user')
 
     if arguments['--remove']:
         remove_files()
-
 
 def get_config():
     """
@@ -295,6 +304,8 @@ def parse_url(track_url):
             download(item, 'playlists', 'playlists')
         elif arguments['-m']:
             download(item, 'playlists-liked', 'my and liked playlists')
+        elif arguments['-s']:
+            download(item, 'userstream', 'stream of a user')
         else:
             logger.error('Please provide a download type...')
     else:
@@ -352,7 +363,7 @@ def download(user, dl_type, name):
     )
     dl_url = url[dl_type].format(user_id)
     logger.debug(dl_url)
-    resources = client.get_collection(dl_url, token)
+    resources = client.get_collection(dl_url, token, maxpage)
     del resources[:offset - 1]
     logger.debug(resources)
     total = len(resources)
@@ -373,6 +384,13 @@ def download(user, dl_type, name):
                 parse_url(item['playlist']['uri'])
             elif dl_type == 'tracks':
                 download_track(item)
+            elif dl_type == 'userstream':
+                item_name = item['type']
+                if item_name.find("repost") == -1:
+                    uri = item[item_name]['uri']
+                    parse_url(uri)
+                else:
+                    logger.info('REPOST.')
             else:
                 download_track(item['track'])
         except Exception as e:
@@ -564,6 +582,8 @@ def download_hls_mp3(track, title):
     filename_path = os.path.abspath(filename)
 
     #output json
+    if not os.path.exists('json'):
+        os.makedirs('json')
     filejson = os.path.abspath('json\\' + filename + ".json")
     with open(filejson, 'w', encoding='utf-8') as file:
         file.write(json.dumps(track, indent=4))

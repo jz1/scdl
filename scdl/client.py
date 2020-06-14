@@ -6,7 +6,7 @@ from scdl import CLIENT_ID
 
 class Client():
 
-    def get_collection(self, url, token):
+    def get_collection(self, url, token, maxpage):
         params = {
             'client_id': CLIENT_ID,
             'linked_partitioning': '1',
@@ -14,7 +14,8 @@ class Client():
         if token:
             params['oauth_token'] = token
         resources = list()
-        while url:
+        count = 0
+        while url and count < maxpage:
             response = requests.get(url,
                 headers={
                 "Sec-Fetch-Mode":"cors",
@@ -34,6 +35,7 @@ class Client():
                 resources.extend(json_data)
             if 'next_href' in json_data:
                 url = json_data['next_href']
+                count += 1
             else:
                 url = None
         return resources
