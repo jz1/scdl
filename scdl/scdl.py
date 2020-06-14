@@ -219,22 +219,15 @@ def get_config():
     global premiumtoken
     config = configparser.ConfigParser()
 
-    if 'XDG_CONFIG_HOME' in os.environ:
-        config_file = os.path.join(
-            os.environ['XDG_CONFIG_HOME'], 'scdl', 'scdl.cfg',
-        )
-    else:
-        config_file = os.path.join(
-            os.path.expanduser('~'), '.config', 'scdl', 'scdl.cfg',
-        )
+    config_file = os.path.join('.config', 'scdl.cfg',)
     config.read(config_file, 'utf8')
     try:
         token = config['scdl']['auth_token']
         path = config['scdl']['path']
         premiumtoken = config['scdl']['premium_auth_token']
     except:
-        logger.error('Are you sure scdl.cfg is in $HOME/.config/scdl/ ?')
-        logger.error('Are both "auth_token" and "path" defined there?')
+        logger.error('Are you sure scdl.cfg is in /.config/?')
+        logger.error('Are both "auth_token" and "path" and "premium_auth_token" defined there?')
         sys.exit(-1)
     if os.path.exists(path):
         os.chdir(path)

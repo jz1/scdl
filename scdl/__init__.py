@@ -15,10 +15,7 @@ path = .
 premium_auth_token =
 """
 
-if 'XDG_CONFIG_HOME' in os.environ:
-    config_dir = os.path.join(os.environ['XDG_CONFIG_HOME'], 'scdl')
-else:
-    config_dir = os.path.join(os.path.expanduser('~'), '.config', 'scdl')
+config_dir = '.config'
 
 config_file = os.path.join(config_dir, 'scdl.cfg')
 
