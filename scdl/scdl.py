@@ -384,7 +384,7 @@ def download(user, dl_type, name):
                     userdir = item[item_name]['user']['permalink']
                     if not os.path.exists(userdir):
                         os.makedirs(userdir)
-                        os.chdir(userdir)
+                    os.chdir(userdir)
                     parse_url(uri)
                     os.chdir('..')
                 else:
