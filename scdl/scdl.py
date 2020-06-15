@@ -243,7 +243,17 @@ def get_item(track_url, client_id=CLIENT_ID):
     try:
         item_url = url['resolve'].format(track_url)
 
-        r = requests.get(item_url, params={'client_id': client_id})
+        r = requests.get(item_url,
+                headers={
+                "Sec-Fetch-Mode":"cors",
+                "Origin": "https://soundcloud.com",
+                "Authorization": "OAuth {}".format(premiumtoken),
+                "Content-Type": "application/json",
+                "Accept": "application/json, text/javascript, */*; q=0.1",
+                "Referer": "https://soundcloud.com/",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36",
+                "DNT": "1",
+                })
         logger.debug(r.url)
         if r.status_code == 403:
             return get_item(track_url, ALT_CLIENT_ID)
